@@ -5,12 +5,15 @@ b = 10;
 c = 6;
 
 create result as Number;
+
 if (a isGreaterThan b) {
   result = a;
 } else {
   result = b;
 }
+
 if (c isGreaterThan result) {
   result = c;
 } 
+
 print result;

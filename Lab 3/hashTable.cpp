@@ -1,14 +1,20 @@
 #include <bits/stdc++.h>
 using namespace std;
-ifstream fin("input.txt");
+
+ifstream read_keywords("keywords.in");
+ifstream read_input("input.txt");
+ofstream write_output("output.txt");
 
 class Node {
   public: 
     string value;
     Node* next;
-    Node(string value) {
+    int index;
+
+    Node(string value, int index) {
         this->value = value;
         this->next = NULL;
+        this->index = index;
     }
 };
 
@@ -19,10 +25,10 @@ class LinkedList {
         this->head = NULL;
     }
 
-    bool insert(string value) {
-        if(find(value)) return false;
+    bool insert(string value, int index) {
+        if(find(value) != -1) return false;
 
-        Node* node = new Node(value);
+        Node* node = new Node(value, index);
         if (this->head == NULL) {
             this->head = node;
         } else {
@@ -35,21 +41,22 @@ class LinkedList {
         return true;
     }
 
-    bool find(string value) {
+    int find(string value) {
         Node* current = this->head;
         while (current != NULL) {
             if (current->value == value) {
-                return true;
+                return current->index;
             }
             current = current->next;
         }
-        return false;
+
+        return -1;
     }
 
     void print() {
         Node *current = this->head;
         while (current != NULL) {
-            cout << current->value << " ";
+            cout << current->value << " " << current->index << endl;
             current = current->next;
         }
     }
@@ -75,7 +82,7 @@ class HashTable {
             Node *current = this->table[i].head;
             while (current != NULL) {
                 int hash = computeHash(current->value, newSize);
-                newTable[hash].insert(current->value);
+                newTable[hash].insert(current->value, current->index);
                 current = current->next;
             }
         }
@@ -91,15 +98,15 @@ class HashTable {
         return sum % this->size;
     }
 
-    bool find(string value) {
+    int find(string value) {
         int hash = computeHash(value, this->size);
         return this->table[hash].find(value);
     }
 
     bool insert(string value) {
-        if(this->find(value)) return false;
+        if(this->find(value) != -1) return false;
         int hash = computeHash(value, this->size);
-        this->table[hash].insert(value);
+        this->table[hash].insert(value, this->numberOfElements);
         this->numberOfElements++;
 
         if(this->numberOfElements >= this->size) {
@@ -119,81 +126,151 @@ class HashTable {
         return this->numberOfElements;
     }
 };
+class CustomNode {
+    public:
+        pair<int, int> value;
+        CustomNode* next;
 
-
-void setReservedKeywords(HashTable& reservedKeywords){
-  reservedKeywords.insert("create");
-  reservedKeywords.insert("as");
-  reservedKeywords.insert("Number");
-  reservedKeywords.insert("Boolean");
-  reservedKeywords.insert("repeatWithValues");
-  reservedKeywords.insert("withStep");
-  reservedKeywords.insert("using");
-  reservedKeywords.insert("if");
-  reservedKeywords.insert("else");
-  reservedKeywords.insert("isGreaterThan");
-  reservedKeywords.insert("isSmallerThan");
-  reservedKeywords.insert("isGreaterOrEqualThan");
-  reservedKeywords.insert("isSmallerOrEqualThan");
-  reservedKeywords.insert("isNotEqual");
-  reservedKeywords.insert("isEqual");
-  reservedKeywords.insert("print");
-  reservedKeywords.insert("read");
-  reservedKeywords.insert("List");
-  reservedKeywords.insert("of");
-  reservedKeywords.insert("lengthOf");
-}
-
-bool isVariableName(string value) {
-    for (int i = 0; i < value.length(); i++) {
-        if (!isalpha(value[i])) {
-            return false;
+        CustomNode(pair<int, int> value) {
+            this->value = value;
+            this->next = NULL;
         }
-    }
-    return true;
-}
+};
 
-bool isValue(string value) {
-    if(value == "true" || value == "false") return true;
-
-    for (int i = 0; i < value.length(); i++) {
-        if (!isdigit(value[i])) {
-            return false;
+class List{
+    public:
+        CustomNode* head;
+        List() {
+            this->head = NULL;
         }
-    }
 
-    return true;
-}
-
-void parse(HashTable reservedKeywords, HashTable &symbolTable) {
-    string line;
-    while (getline(fin, line)) {
-        string value = "";
-        for (int i = 0; i < line.length(); i++) {
-            if (line[i] == ' ' || line[i] == ';' || line[i] == ',') {
-                if (value != "") {
-                    if (!reservedKeywords.find(value)) {
-                        if (isVariableName(value) || isValue(value)) {
-                            symbolTable.insert(value);
-                        }
-                    }
-                }
-                value = "";
+        void insert(pair<int, int> value) {
+            CustomNode* node = new CustomNode(value);
+            if (this->head == NULL) {
+                this->head = node;
             } else {
-                value += line[i];
+                CustomNode* current = this->head;
+                while (current->next != NULL) {
+                    current = current->next;
+                }
+                current->next = node;
             }
         }
+
+        void print() {
+            CustomNode *current = this->head;
+            while (current != NULL) {
+                write_output << current->value.first << " " << current->value.second << endl;
+                current = current->next;
+            }
+        }
+};
+
+class SymbolTable {
+    public: 
+        HashTable symbolTable;
+        HashTable reservedKeywords; 
+        List internalNormalForm;
+
+        SymbolTable() {
+            readReservedKeywords();
+        }
+
+        void print() {
+            this->symbolTable.print();
+        }
+
+    void readReservedKeywords(){
+        string line;
+        while (getline(read_keywords, line)) {
+            line.erase(remove_if(line.begin(), line.end(), ::isspace), line.end());
+            this->reservedKeywords.insert(line);
+        }
+    } 
+
+    bool isVariableName(string value) {
+        for (int i = 0; i < value.length(); i++) {
+            if (!isalpha(value[i])) {
+                return false;
+            }
+        }
+        return true;
     }
-}
+
+    bool isValue(string value) {
+        if(value == "true" || value == "false") return true;
+
+        for (int i = 0; i < value.length(); i++) {
+            if (!isdigit(value[i])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool isSeparator(char charValue) {
+        string value(1, charValue);
+        return value == "(" || value == ")" || value == "{" || value == "}" || value == ";" || value == "=" || value == " " || value == ",";
+    }
+
+    void parse() {
+        int numberOfErrors = 0;
+        string line;
+        int lineIndex = 0;
+        while (getline(read_input, line)) {
+            string value = "";
+            for (int i = 0; i <= line.length(); i++) {
+                if (isSeparator(line[i]) || i == line.length()) {
+                    if (value != "") {
+                        int index = reservedKeywords.find(value);
+                        if (index == -1) {
+                            if (isVariableName(value)) {
+                                symbolTable.insert(value);
+                                internalNormalForm.insert(make_pair(reservedKeywords.find("IDENTIFIER"), symbolTable.find(value)));
+                            }
+                            else if(isValue(value)) {
+                                 symbolTable.insert(value);
+                                internalNormalForm.insert(make_pair(reservedKeywords.find("CONST"), symbolTable.find(value)));
+                                
+                            }
+                            else{
+                                numberOfErrors++;
+                                write_output << "Error on line " << lineIndex << ": " << value << " is not a valid variable name or value" << endl;
+                            }
+                        }
+                        else{
+                            internalNormalForm.insert(make_pair(index, -1));
+                        }
+                    }
+                    if(isSeparator(line[i])){
+                        string separator(1, line[i]);
+                        int index = reservedKeywords.find(separator);
+                        if(index >= 0){
+                            internalNormalForm.insert(make_pair(index, -1));
+                        }
+                        
+                    }
+                    value = "";
+                } else {
+                    value += line[i];
+                }
+            }
+
+            lineIndex++;
+        }
+
+        if(numberOfErrors == 0){
+            internalNormalForm.print(); 
+        }
+    }
+};
 
 int main() {
-  HashTable reservedKeywords;
-  HashTable symbolTable;
+    SymbolTable symbolTable;
 
-  setReservedKeywords(reservedKeywords);
-  parse(reservedKeywords, symbolTable);
+    symbolTable.parse();
 
-  symbolTable.print();
+    return 0;
 
-  return 0;
 }
