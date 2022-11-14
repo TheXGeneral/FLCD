@@ -1,0 +1,14 @@
+The program reads data from the file
+File structure (EBNF) 
+
+STATES = <set of states, comma separated>
+ALPHABET = <comma separated values>
+INITIAL_STATE = <one state>
+FINAL_STATES = <set of final states, comma separated>
+TRANSITIONS = < list of  (state, symbol) -> other_state, seaparated by line
+
+After it read the data from the file, the code is able to validate a given word by starting from the initial state
+and trying to find a transtion containing the required symbol. It will continue with the current_state as initial state. 
+if it encounters a non valid symbol (there is no transition from curent state to another, passing trought the required symbol), 
+will return false, otherwise will continue
+
