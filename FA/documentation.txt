@@ -1,3 +1,5 @@
+Github Link: https://github.com/TheXGeneral/FLCD/tree/master/FA
+
 The program reads data from the file
 File structure (EBNF) 
 
@@ -12,3 +14,5 @@ and trying to find a transtion containing the required symbol. It will continue 
 if it encounters a non valid symbol (there is no transition from curent state to another, passing trought the required symbol), 
 will return false, otherwise will continue
 
+
+Input files identifiers.in and integers.in serve as FA for checking grammar of identifiers and integers
