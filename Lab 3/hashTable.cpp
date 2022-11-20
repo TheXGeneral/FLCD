@@ -5,6 +5,8 @@ ifstream read_keywords("keywords.in");
 ifstream read_input("input.txt");
 ofstream write_output("output.txt");
 
+ifstream read_identifiers("identifiers.txt");
+ifstream read_constants("constants.txt");
 class Node {
   public: 
     string value;
@@ -166,13 +168,196 @@ class List{
         }
 };
 
+class FiniteAutomata {
+  public:
+    vector<string> states;
+    vector<char> alphabet;
+    string initial_state;
+    vector<string> final_states;
+    vector<tuple<string, char, string>> transitions;
+    fstream fin;
+
+    FiniteAutomata(){
+
+    }
+
+    FiniteAutomata(string file){
+        fin.open(file, ios_base::in);
+        read();
+    }
+
+    // read a line and return string without label before equal
+    string read_line(){
+        string line;
+        getline(fin, line);
+        while (line[0] != '=') {
+            line.erase(line.begin());
+        }
+        line.erase(line.begin());
+        return line;
+    }
+
+
+    void read_states() {
+        stringstream ss(read_line());
+        string state;
+
+        while(getline(ss, state, ',')) {
+          state.erase(remove(state.begin(), state.end(), ' '), state.end());
+          states.push_back(state);
+        }
+    }
+
+    void read_alphabet() {
+        stringstream ss(read_line());
+        string symbol;
+        while(getline(ss, symbol, ',')) {
+          symbol.erase(remove(symbol.begin(), symbol.end(), ' '), symbol.end());
+          alphabet.push_back(symbol[0]);
+        }
+    }
+
+    void read_initial_state() {
+        string line = read_line();
+        line.erase(remove(line.begin(), line.end(), ' '), line.end());
+        initial_state = line;
+    }
+
+    void read_final_states(){
+        stringstream ss(read_line());
+        string state;
+        while(getline(ss, state, ',')) {
+          state.erase(remove(state.begin(), state.end(), ' '), state.end());
+          final_states.push_back(state);
+        }
+    }
+
+    tuple<string, char, string> read_one_transition(){
+        string line;
+        getline(fin, line);
+        while (line[0] != '(') {
+            line.erase(line.begin());
+        }
+        line.erase(line.begin());
+        stringstream ss(line);
+        string state;
+        getline(ss, state, ',');
+        state.erase(remove(state.begin(), state.end(), ' '), state.end());
+        string symbol;
+        getline(ss, symbol, ')');
+        symbol.erase(remove(symbol.begin(), symbol.end(), ' '), symbol.end());
+        
+        getline(ss, line, '>');
+        getline(ss, line, '-');
+        line.erase(remove(line.begin(), line.end(), ' '), line.end());
+        return make_tuple(state, symbol[0], line);
+     }
+
+
+    void read_transitions() {
+        read_line();
+
+        while (fin.peek() != EOF) {
+            transitions.push_back(read_one_transition());
+        }
+    }
+
+    void read() {
+        read_states();
+        read_alphabet();
+        read_initial_state();
+        read_final_states();
+        read_transitions();
+    }
+
+    bool isCorrect(string word) {
+        string current_state = initial_state;
+        for (int i = 0; i < word.size(); i++) {
+            bool found = false;
+
+            for (int j = 0; j < transitions.size(); j++) {
+                if (get<0>(transitions[j]) == current_state && get<1>(transitions[j]) == word[i]) {
+                    current_state = get<2>(transitions[j]);
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                return false;
+            }
+        }
+
+        for (int i = 0; i < final_states.size(); i++) {
+            if (final_states[i] == current_state) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void print() {
+        cout << "STATES = ";
+        for (int i = 0; i < states.size(); i++) {
+            cout << states[i];
+            if (i != states.size() - 1) {
+                cout << ", ";
+            }
+        }
+        cout << endl;
+        cout << "ALPHABET = ";
+        for (int i = 0; i < alphabet.size(); i++) {
+            cout << alphabet[i];
+            if (i != alphabet.size() - 1) {
+                cout << ", ";
+            }
+        }
+        cout << endl;
+        cout << "INITIAL_STATE = " << initial_state << endl;
+        cout << "FINAL_STATES = ";
+        for (int i = 0; i < final_states.size(); i++) {
+            cout << final_states[i];
+            if (i != final_states.size() - 1) {
+                cout << ", ";
+            }
+        }
+        cout << endl;
+        cout << "TRANSITIONS = " << endl;
+        for (int i = 0; i < transitions.size(); i++) {
+            cout << "(" << get<0>(transitions[i]) << ", " << get<1>(transitions[i]) << ") -> " << get<2>(transitions[i]) << endl;
+        }
+    }
+
+    void menu(){
+        string word;
+        while(word != "*"){
+            cout << "Enter word: ";
+            cin >> word;
+            if (word == "*") {
+                break;
+            }
+            if (isCorrect(word)) {
+                cout << "Word is correct" << endl;
+            } else {
+                cout << "Word is not correct" << endl;
+            }
+        }
+    }
+};
+
 class SymbolTable {
     public: 
         HashTable symbolTable;
         HashTable reservedKeywords; 
         List internalNormalForm;
+        FiniteAutomata identifiers;
+        FiniteAutomata constants;
+
 
         SymbolTable() {
+            identifiers = FiniteAutomata("identifiers.txt");
+            constants = FiniteAutomata("constants.txt");
             readReservedKeywords();
         }
 
@@ -189,24 +374,14 @@ class SymbolTable {
     } 
 
     bool isVariableName(string value) {
-        for (int i = 0; i < value.length(); i++) {
-            if (!isalpha(value[i])) {
-                return false;
-            }
-        }
-        return true;
+
+        return identifiers.isCorrect(value);
     }
 
     bool isValue(string value) {
         if(value == "true" || value == "false") return true;
 
-        for (int i = 0; i < value.length(); i++) {
-            if (!isdigit(value[i])) {
-                return false;
-            }
-        }
-
-        return true;
+        return constants.isCorrect(value);
     }
 
     bool isSeparator(char charValue) {
@@ -217,7 +392,7 @@ class SymbolTable {
     void parse() {
         int numberOfErrors = 0;
         string line;
-        int lineIndex = 0;
+        int lineIndex = 1;
         while (getline(read_input, line)) {
             string value = "";
             for (int i = 0; i <= line.length(); i++) {
@@ -271,6 +446,9 @@ int main() {
 
     symbolTable.parse();
 
+    // FiniteAutomata identifiers("identifiers.txt");
+    // identifiers.print();
+    // identifiers.menu();
     return 0;
 
 }

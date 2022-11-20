@@ -2,7 +2,7 @@ create a, b, c as Number;
 
 a = 5;
 b = 10;
-c = 6;
+c1 = 6;
 
 create result as Number;
 
