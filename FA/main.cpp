@@ -2,7 +2,7 @@
 
 using namespace std;
 
-ifstream fin("FA.in");
+// ifstream fin("FA.in");
 
 class FiniteAutomata {
   public:
@@ -12,6 +12,16 @@ class FiniteAutomata {
     vector<string> final_states;
     vector<tuple<string, char, string>> transitions;
     
+    fstream fin;
+
+    FiniteAutomata(){
+
+    }
+
+    FiniteAutomata(string file){
+        fin.open(file, ios_base::in);
+    }
+
     // read a line and return string without label before equal
     string read_line(){
         string line;
@@ -125,8 +135,8 @@ class FiniteAutomata {
 };
 
 int main() {
-  FiniteAutomata fa;
+  FiniteAutomata fa = FiniteAutomata("FA.in");
   fa.read();
-  cout << fa.isCorrect("01234") << endl;
+  fa.isCorrect("123");
   return 0;
 }

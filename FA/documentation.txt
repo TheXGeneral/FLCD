@@ -3,11 +3,13 @@ Github Link: https://github.com/TheXGeneral/FLCD/tree/master/FA
 The program reads data from the file
 File structure (EBNF) 
 
-STATES = <set of states, comma separated>
-ALPHABET = <comma separated values>
-INITIAL_STATE = <one state>
-FINAL_STATES = <set of final states, comma separated>
-TRANSITIONS = < list of  (state, symbol) -> other_state, seaparated by line
+STATES = <state>| <state>, <set_of_states>
+ALPHABET = <symbol> | <symbol>, <set-of-symbols>
+INITIAL_STATE = <state>
+FINAL_STATES = <state>| <state>, <set_of_states>
+TRANSITIONS = 
+    (<state>, <symbol>) -> <other_state> | (<state>, <symbol>) -> <other_state> 
+                                            <list-of-transitions>
 
 After it read the data from the file, the code is able to validate a given word by starting from the initial state
 and trying to find a transtion containing the required symbol. It will continue with the current_state as initial state. 
