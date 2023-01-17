@@ -24,14 +24,7 @@ is done by implementing expand, advance, momentary insuccess, back, another try,
 expand function gets the item from the top of the stack, checks if is a non terminal and than proceed to add into the stack the first available production 
 the advance function checks if the top of the stack is the same simbol with the element at index of the input string 
 if the advance cannot be made, it means that the production used in not valid, so the momentaryInsuccess function is called 
-it will get the next available production of that 
+it will get the next available production of that symbol. If it cannot get any more productions, it will call the back function that removes the last used production and will try to retry the process with the given productions
 
-
-
-
-
-the back function pops the last production from the stack, also removing it from the list of used productions 
-if the back function cannot find another valid production 
-it will go back one more step 
-
+the sucess function will check if the working stack is empty and if the inputIndex react the end of the string
 

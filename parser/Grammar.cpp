@@ -153,44 +153,48 @@ class Grammar {
 
 class RecursiveDescendantParser {
   private:
-    string input;
+    vector<string> input;
     int inputIndex;
-    stack<string> parseStack;
+    stack<string> workingStack;
+    string currentToken;
     vector<pair<string, vector<string>>> usedProductions;
 
   public:
     Grammar grammar;
 
-    RecursiveDescendantParser(string input) : input(input), inputIndex(0) {}
+    RecursiveDescendantParser(vector<string> input, Grammar new_grammar) : input(input), inputIndex(0), grammar(new_grammar){
+      workingStack.push(grammar.startingSymbol);
+    }
 
     void expand(string nonTerminal){
       int index = 0;
       vector<string> production = grammar.getProductionForSymbol(nonTerminal, index);
       usedProductions.push_back(make_pair(nonTerminal, production));
       for(int i = 0; i < production.size(); i++){
-        parseStack.push(production[i]);
+        workingStack.push(production[i]);
       }
     }
 
     bool advance(){
-      if(parseStack.empty()){
+      if(workingStack.empty()){
         return false;
       }
 
-      if(parseStack.top() == "" + input[inputIndex]){
-        parseStack.pop();
+      if(workingStack.top() == input[inputIndex]){
+        workingStack.pop();
         inputIndex++;
         return true;
       }
+
       return false;
     }
 
     bool momentaryInsuccess(){
-      if(parseStack.empty()){
+      if(workingStack.empty()){
         return false;
       }
-      string symbol = parseStack.top();
-      parseStack.pop();
+      string symbol = workingStack.top();
+      workingStack.pop();
       if(grammar.isNonTerminal(symbol)){
         int lastUsedProduction = grammar.getProductionIndex(symbol, usedProductions.back().second);
         vector<string> nextProduction = grammar.getProductionForSymbol(symbol, lastUsedProduction + 1);
@@ -200,32 +204,33 @@ class RecursiveDescendantParser {
         else{
           usedProductions.pop_back();
           usedProductions.push_back(make_pair(symbol, nextProduction));
-          for(int i = nextProduction.size() - 1; i >= 0; i--){
-            parseStack.push(nextProduction[i]);
+          for(int i =  0; i < nextProduction.size(); i++){
+            workingStack.push(nextProduction[i]);
           }
           return true;
         }
       }
+
       return false;
     }
 
     void back(){
       usedProductions.pop_back();
-      parseStack = stack<string>();
+      workingStack = stack<string>();
     }
 
     void anotherTry(){
-      parseStack = stack<string>();
+      workingStack = stack<string>();
       inputIndex = 0;
       usedProductions.clear();
     }
 
     bool success(){
-      return parseStack.empty() && inputIndex == input.size();
+      return workingStack.empty() && inputIndex == input.size();
     }
 
     void parse(){
-      parseStack.push(grammar.startingSymbol);
+      workingStack.push(grammar.startingSymbol);
       while(!success()){
         if(!advance()){
           if(!momentaryInsuccess()){
@@ -237,8 +242,8 @@ class RecursiveDescendantParser {
             }
           }
         }
-        else if(grammar.isNonTerminal(parseStack.top())){
-          expand(parseStack.top());
+        else if(grammar.isNonTerminal(workingStack.top())){
+          expand(workingStack.top());
         }
       }
       //print used productions
@@ -270,7 +275,8 @@ vector<string> readFromFile(){
 int main() {
     Grammar grammar;
     grammar.parse();
-    RecursiveDescendantParser parser("as_df 0 0 0");
+    vector<string> v = {"as_df", "0", "0", "0"};
+    RecursiveDescendantParser parser(v, grammar);
     parser.grammar = grammar;
     parser.parse();
 
