@@ -1,0 +1,37 @@
+Grammar 
+
+- contains 4 main fields that are parsed from file 
+- set of non terminals
+- set of terminals 
+- starting symbol
+- productions 
+
+in the file, non terminals are all on one line, separated by space, are read like so and added into the set 
+set of terminals is expected and read in the same way 
+starting symbol is one, one one line 
+productions follow the format 
+  non_terminal -> list_of_tokens separated by space
+  or 
+  non_terminal -> list_of_token | other_list_of_token 
+
+production is a map, with key the non_terminal and as values a vector of vector of string 
+      a list of tokens is kept as a vector of strings
+  the main vector holds all the list of tokens 
+
+Recursive Descendant parser
+is done by implementing expand, advance, momentary insuccess, back, another try, success
+
+expand function gets the item from the top of the stack, checks if is a non terminal and than proceed to add into the stack the first available production 
+the advance function checks if the top of the stack is the same simbol with the element at index of the input string 
+if the advance cannot be made, it means that the production used in not valid, so the momentaryInsuccess function is called 
+it will get the next available production of that 
+
+
+
+
+
+the back function pops the last production from the stack, also removing it from the list of used productions 
+if the back function cannot find another valid production 
+it will go back one more step 
+
+
